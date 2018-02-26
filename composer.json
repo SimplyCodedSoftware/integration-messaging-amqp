@@ -1,24 +1,33 @@
 {
-    "name": "simplycodedsoftware/enterprise-messaging",
+    "name": "simplycodedsoftware/integration-messaging-amqp",
     "license": "MIT",
     "type": "library",
-    "authors": [],
-    "keywords": [],
-    "description": "",
+    "authors": [
+        {
+            "name": "Dariusz Gafka",
+            "email": "dgafka.mail@gmail.com"
+        }
+    ],
+    "keywords": ["amqp", "rabbitmq", "rabbit", "messaging", "asynchronous", "message", "spring", "enterprise integration patterns", "eip", "distributed architecture", "event driven architecture", "eda"],
+    "description": "Framework to provide pipe and filters architecture and solutions to work in distributed architecture. Based on enterprise integration patterns and java spring framework.",
     "autoload": {
         "psr-4": {
-            "SimplyCodedSoftware\\": "src"
+            "SimplyCodedSoftware\\IntegrationMessaging\\Amqp\\": "src"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Test\\": "tests/phpunit",
+            "Test\\SimplyCodedSoftware\\IntegrationMessaging\\Amqp\\": "tests/phpunit",
             "Behat\\Bootstrap\\": "tests/Behat/Bootstrap",
             "Fixture\\": "tests/Fixture"
         }
     },
     "require": {
-        "php": ">=7.1.0"
+        "php": ">=7.1.0",
+        "simplycodedsoftware/integration-messaging": "*",
+        "ext-mbstring": "*",
+        "ext-bcmath": "*",
+        "php-amqplib/php-amqplib": "^2.7.0"
     },
     "require-dev": {
         "phpunit/phpunit": "^6.2.3",
