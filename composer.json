@@ -5,7 +5,7 @@
     "authors": [
         {
             "name": "Dariusz Gafka",
-            "email": "dgafka.mail@gmail.com"
+            "email": "simplycodedsoftware@gmail.com"
         }
     ],
     "keywords": ["amqp", "rabbitmq", "rabbit", "messaging", "asynchronous", "message", "spring", "enterprise integration patterns", "eip", "distributed architecture", "event driven architecture", "eda"],
@@ -24,9 +24,7 @@
     },
     "require": {
         "php": ">=7.1.0",
-        "simplycodedsoftware/integration-messaging": "*",
-        "ext-mbstring": "*",
-        "ext-bcmath": "*",
+        "simplycodedsoftware/integration-messaging": "^0.4.0",
         "php-amqplib/php-amqplib": "^2.7.0"
     },
     "require-dev": {

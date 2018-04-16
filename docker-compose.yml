@@ -1,23 +1,24 @@
-version: "2"
+version: "3"
 
 services:
   app:
     image: simplycodedsoftware/ci:7.1
     volumes:
       - "$PWD:/data/app"
-      - "$HOME/.ssh:/home/deploy/.ssh"
     user: 1000:1000
     working_dir: "/data/app"
-    command: sleep 99999
+    command: sleep 999999
     networks:
       - default
   rabbitmq:
     image: rabbitmq:3.6-management-alpine
     environment:
-      RABBITMQ_DEFAULT_USER: user
-      RABBITMQ_DEFAULT_PASS: password
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
     networks:
       - default
+    ports:
+      - "15672:15672"
 
 networks:
   default:
