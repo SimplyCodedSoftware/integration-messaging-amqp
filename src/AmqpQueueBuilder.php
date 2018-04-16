@@ -156,9 +156,10 @@ class AmqpQueueBuilder implements MessageChannelBuilder
      */
     public function getRequiredReferenceNames(): array
     {
-        return [
-            $this->connectionReferenceName
-        ];
+        $requiredReferences = $this->messageConverterReferenceNames;
+        $requiredReferences[] = $this->connectionReferenceName;
+
+        return $requiredReferences;
     }
 
     /**
