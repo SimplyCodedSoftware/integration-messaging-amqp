@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "content-hash": "0b728f6bb4ab69f3f7702e6bdbb7cf8b",
+    "content-hash": "4df0e66ebb07d77730620d39c85021f6",
     "packages": [
         {
             "name": "doctrine/annotations",
@@ -588,16 +588,16 @@
         },
         {
             "name": "simplycodedsoftware/integration-messaging",
-            "version": "dev-master",
+            "version": "0.4.5",
             "source": {
                 "type": "git",
                 "url": "https://github.com/SimplyCodedSoftware/integration-messaging.git",
-                "reference": "50149df510ea54386d0401e53f50d229cd202322"
+                "reference": "5b4a34dedc1ac1d32b9ebb28e474f23f04b01ae2"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/SimplyCodedSoftware/integration-messaging/zipball/50149df510ea54386d0401e53f50d229cd202322",
-                "reference": "50149df510ea54386d0401e53f50d229cd202322",
+                "url": "https://api.github.com/repos/SimplyCodedSoftware/integration-messaging/zipball/5b4a34dedc1ac1d32b9ebb28e474f23f04b01ae2",
+                "reference": "5b4a34dedc1ac1d32b9ebb28e474f23f04b01ae2",
                 "shasum": ""
             },
             "require": {
@@ -641,7 +641,7 @@
                 "messaging",
                 "spring"
             ],
-            "time": "2018-04-16T08:17:32+00:00"
+            "time": "2018-04-17T18:55:41+00:00"
         },
         {
             "name": "symfony/cache",
@@ -3446,15 +3446,11 @@
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": {
-        "simplycodedsoftware/integration-messaging": 20
-    },
+    "stability-flags": [],
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {
-        "php": ">=7.1.0",
-        "ext-mbstring": "*",
-        "ext-bcmath": "*"
+        "php": ">=7.1.0"
     },
     "platform-dev": []
 }

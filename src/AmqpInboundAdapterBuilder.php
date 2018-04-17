@@ -75,6 +75,14 @@ class AmqpInboundAdapterBuilder implements ConsumerBuilder
     }
 
     /**
+     * @inheritDoc
+     */
+    public function getRequiredReferences(): array
+    {
+        return $this->transactionFactoryReferenceNames;
+    }
+
+    /**
      * @param array $referenceNames
      * @return AmqpInboundAdapterBuilder
      */
