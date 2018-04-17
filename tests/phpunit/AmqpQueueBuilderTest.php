@@ -160,7 +160,7 @@ class AmqpQueueBuilderTest extends AmqpMessagingTest
         $receivedMessage = $amqpChannel->receive();
 
         /** @var AmqpHeaders $amqpHeaders */
-        $amqpHeaders = $receivedMessage->getHeaders()->get("amqpHeaders");
+        $amqpHeaders = $receivedMessage->getHeaders()->get(AmqpHeaders::MESSAGE_HEADER_NAME);
 
         $this->assertInstanceOf(AmqpHeaders::class, $amqpHeaders);
         $this->assertInstanceOf(AMQPChannel::class, $amqpHeaders->getChannel());
@@ -318,6 +318,32 @@ class AmqpQueueBuilderTest extends AmqpMessagingTest
             $exchangeName,
             ""
         )->withMessageAck(true));
+        $pollableChannel
+            ->send(MessageBuilder::withPayload($payload)->build());
+
+        $receivedMessage = $pollableChannel->receive();
+        /** @var AcknowledgementCallback $callback */
+        $callback = $receivedMessage->getHeaders()->get(AmqpHeaders::ACKNOWLEDGEMENT_CALLBACK);
+        $callback->accept();
+        /** @var AmqpHeaders $amqpHeaders */
+        $amqpHeaders = $receivedMessage->getHeaders()->get(AmqpHeaders::MESSAGE_HEADER_NAME);
+        $amqpHeaders->getChannel()->close();
+
+        $this->assertNull($this->buildDirectExchange($messageChannelName, $exchangeName, "")->receive());
+    }
+
+    public function test_acking_message_when_channel_do_not_require_it()
+    {
+        $messageChannelName = Uuid::uuid4();
+        $exchangeName = Uuid::uuid4();
+        $payload = "somePayload";
+
+        $pollableChannel = $this->buildAmqpQueue(AmqpQueueBuilder::createWithDirectExchangeBinding(
+            $messageChannelName,
+            self::CONNECTION_REFERENCE,
+            $exchangeName,
+            ""
+        )->withMessageAck(false));
         $pollableChannel
             ->send(MessageBuilder::withPayload($payload)->build());
 

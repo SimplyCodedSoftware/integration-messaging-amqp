@@ -50,7 +50,6 @@ class BasicAmqpMessageHeadersConverter implements AmqpMessageConverter
 
         return $messageBuilder
             ->setHeader(MessageHeaders::CONTENT_TYPE, isset($amqpHeaders[self::CONTENT_TYPE]) ? $amqpHeaders[self::CONTENT_TYPE] : self::TEXT_PLAIN)
-            ->setHeader(AmqpHeaders::MESSAGE_HEADER_NAME, $amqpInternalHeaders)
-            ->setHeader(AmqpHeaders::ACKNOWLEDGEMENT_CALLBACK, new AmqpAcknowledgementCallback($amqpInternalHeaders));
+            ->setHeader(AmqpHeaders::MESSAGE_HEADER_NAME, $amqpInternalHeaders);
     }
 }

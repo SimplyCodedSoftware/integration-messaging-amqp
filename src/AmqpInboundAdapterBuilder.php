@@ -96,7 +96,7 @@ class AmqpInboundAdapterBuilder implements ConsumerBuilder
                         ->withErrorChannel($this->errorChannelName)
                         ->build($referenceSearchService, $channelResolver);
 
-        return GenericPollableConsumer::createWith(
+        return GenericPollableConsumerWithAcknowledgement::createWith(
             $this->endpointName,
             $channelResolver->resolve($this->amqpChannelName),
             $gateway

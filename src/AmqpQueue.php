@@ -163,7 +163,13 @@ class AmqpQueue implements PollableChannel
 
         $this->getChannel()->basic_consume($this->queueName, '', false, !$this->withMessageAck, false, false,
             function(AMQPMessage $amqpmMessage) use ($channel, $internalQueue, $messageConverter) {
-                $message = MessageBuilder::withPayload($amqpmMessage->getBody());
+
+                $message = MessageBuilder::withPayload($amqpmMessage->getBody())
+                                ->setHeader(AmqpHeaders::ACKNOWLEDGEMENT_CALLBACK,
+                                    $this->withMessageAck
+                                        ? new AmqpAcknowledgementCallback(AmqpHeaders::createFrom($amqpmMessage))
+                                        : NoAcknowledgementCallback::create()
+                                );
 
                 foreach ($this->messageConverters as $messageConverter) {
                     $message = $messageConverter->fromAmqpMessage($amqpmMessage, $message);

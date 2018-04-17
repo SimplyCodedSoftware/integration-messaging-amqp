@@ -12,7 +12,7 @@ use PhpAmqpLib\Message\AMQPMessage;
 class AmqpHeaders
 {
     public const ACKNOWLEDGEMENT_CALLBACK = "amqp_ack_callback";
-    public const MESSAGE_HEADER_NAME = "amqpHeaders";
+    public const MESSAGE_HEADER_NAME = "amqp_headers";
 
     /**
      * @var AMQPChannel
