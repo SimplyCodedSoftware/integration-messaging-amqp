@@ -9,6 +9,7 @@ use SimplyCodedSoftware\IntegrationMessaging\Amqp\AcknowledgementCallback;
 use SimplyCodedSoftware\IntegrationMessaging\Amqp\AmqpHeaders;
 use SimplyCodedSoftware\IntegrationMessaging\Amqp\ConnectionFactory;
 use SimplyCodedSoftware\IntegrationMessaging\Amqp\AmqpQueueBuilder;
+use SimplyCodedSoftware\IntegrationMessaging\Amqp\OptionalAmqpMessageHeaderConverter;
 use SimplyCodedSoftware\IntegrationMessaging\Amqp\SimpleAmqpMessageHeaderConverter;
 use SimplyCodedSoftware\IntegrationMessaging\Handler\InMemoryReferenceSearchService;
 use SimplyCodedSoftware\IntegrationMessaging\Message;
@@ -171,6 +172,40 @@ class AmqpQueueBuilderTest extends AmqpMessagingTest
         $this->assertEquals($receivedMessage->getHeaders()->get(MessageHeaders::CONTENT_TYPE), "application/json");
 
         $this->assertEquals("123", $receivedMessage->getHeaders()->get("hash"));
+    }
+
+    public function test_mapping_with_optional_headers()
+    {
+        $messageChannelName = Uuid::uuid4();
+        $exchangeName = Uuid::uuid4();
+        $routingKey = "black";
+
+        $amqpChannel = AmqpQueueBuilder::createWithDirectExchangeBinding(
+            $messageChannelName,
+            self::CONNECTION_REFERENCE,
+            $exchangeName,
+            $routingKey
+        )
+            ->withMessageConverterReferenceNames(["testConverter"]);
+
+        $amqpChannel = $this->buildAmqpQueueWithReferences($amqpChannel, [
+            "testConverter" => OptionalAmqpMessageHeaderConverter::createWith(
+                ["hash", "token"],
+                ["hash", "token"]
+            )
+        ]);
+
+        $amqpChannel->send(
+            MessageBuilder::withPayload("some")
+                ->setHeader("hash", "123")
+                ->setHeader(MessageHeaders::CONTENT_TYPE, "application/json")
+                ->build()
+        );
+
+        $receivedMessage = $amqpChannel->receive();
+
+        $this->assertEquals("123", $receivedMessage->getHeaders()->get("hash"));
+        $this->assertFalse($receivedMessage->getHeaders()->containsKey("token"));
     }
 
     public function test_throwing_exception_if_mapped_header_not_found_during_receiving()
