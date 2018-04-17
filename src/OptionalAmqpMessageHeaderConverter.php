@@ -51,7 +51,8 @@ class OptionalAmqpMessageHeaderConverter implements AmqpMessageConverter
     {
         foreach ($this->toAmqpHeaderNames as $headerName) {
             if ($message->getHeaders()->containsKey($headerName)) {
-                $amqpMessageBuilder = $amqpMessageBuilder->addProperty($headerName, $message->getHeaders()->get($headerName));
+                $propertyValue      = $message->getHeaders()->get($headerName);
+                $amqpMessageBuilder = $amqpMessageBuilder->addProperty($headerName, is_object($propertyValue) ? (string)$propertyValue : $propertyValue);
             }
         }
 

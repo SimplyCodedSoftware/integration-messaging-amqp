@@ -12,7 +12,7 @@ use SimplyCodedSoftware\IntegrationMessaging\Support\MessageBuilder;
  * @package SimplyCodedSoftware\IntegrationMessaging\Amqp
  * @author Dariusz Gafka <dgafka.mail@gmail.com>
  */
-class SimpleAmqpMessageHeaderConverter implements AmqpMessageConverter
+class RequiredAmqpMessageHeaderConverter implements AmqpMessageConverter
 {
     /**
      * @var string[]
@@ -37,7 +37,8 @@ class SimpleAmqpMessageHeaderConverter implements AmqpMessageConverter
     /**
      * @param array $toAmqpHeaderNames
      * @param array $fromAmqpHeaderNames
-     * @return SimpleAmqpMessageHeaderConverter
+     *
+     * @return RequiredAmqpMessageHeaderConverter
      */
     public static function createWith(array $toAmqpHeaderNames, array $fromAmqpHeaderNames) : self
     {
@@ -50,7 +51,8 @@ class SimpleAmqpMessageHeaderConverter implements AmqpMessageConverter
     public function toAmqpMessage(Message $message, AmqpMessageBuilder $amqpMessageBuilder): AmqpMessageBuilder
     {
         foreach ($this->toAmqpHeaderNames as $headerName) {
-            $amqpMessageBuilder = $amqpMessageBuilder->addProperty($headerName, $message->getHeaders()->get($headerName));
+            $propertyValue      = $message->getHeaders()->get($headerName);
+            $amqpMessageBuilder = $amqpMessageBuilder->addProperty($headerName, is_object($propertyValue) ? (string)$propertyValue : $propertyValue);
         }
 
         return $amqpMessageBuilder;
@@ -68,7 +70,7 @@ class SimpleAmqpMessageHeaderConverter implements AmqpMessageConverter
                 throw InvalidArgumentException::create("Header to be mapped {$headerName} from AMQP message does not exists");
             }
 
-            $messageBuilder = $messageBuilder->setHeader($headerName, $amqpHeaders[$headerName]);
+            $messageBuilder = $messageBuilder->setHeader($headerName, is_object($amqpHeaders[$headerName]) ? (string)$amqpHeaders[$headerName] : $amqpHeaders[$headerName]);
         }
 
         return $messageBuilder;
