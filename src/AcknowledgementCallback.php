@@ -14,7 +14,7 @@ interface AcknowledgementCallback
     /**
      * @return bool
      */
-    public function isAcknowledged() : bool;
+    public function isAlreadyAcknowledged() : bool;
 
     /**
      * @return bool

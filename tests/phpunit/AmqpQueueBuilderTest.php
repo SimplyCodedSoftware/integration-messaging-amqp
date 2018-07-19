@@ -9,7 +9,8 @@ use SimplyCodedSoftware\IntegrationMessaging\Amqp\AcknowledgementCallback;
 use SimplyCodedSoftware\IntegrationMessaging\Amqp\AmqpHeaders;
 use SimplyCodedSoftware\IntegrationMessaging\Amqp\ConnectionFactory;
 use SimplyCodedSoftware\IntegrationMessaging\Amqp\AmqpQueueBuilder;
-use SimplyCodedSoftware\IntegrationMessaging\Amqp\SimpleAmqpMessageHeaderConverter;
+use SimplyCodedSoftware\IntegrationMessaging\Amqp\OptionalAmqpMessageHeaderConverter;
+use SimplyCodedSoftware\IntegrationMessaging\Amqp\RequiredAmqpMessageHeaderConverter;
 use SimplyCodedSoftware\IntegrationMessaging\Handler\InMemoryReferenceSearchService;
 use SimplyCodedSoftware\IntegrationMessaging\Message;
 use SimplyCodedSoftware\IntegrationMessaging\MessageHeaders;
@@ -143,7 +144,7 @@ class AmqpQueueBuilderTest extends AmqpMessagingTest
             ->withMessageConverterReferenceNames(["testConverter"]);
 
         $amqpChannel = $this->buildAmqpQueueWithReferences($amqpChannel, [
-            "testConverter" => SimpleAmqpMessageHeaderConverter::createWith(
+            "testConverter" => RequiredAmqpMessageHeaderConverter::createWith(
                 ["hash"],
                 ["hash"]
             )
@@ -159,7 +160,7 @@ class AmqpQueueBuilderTest extends AmqpMessagingTest
         $receivedMessage = $amqpChannel->receive();
 
         /** @var AmqpHeaders $amqpHeaders */
-        $amqpHeaders = $receivedMessage->getHeaders()->get("amqpHeaders");
+        $amqpHeaders = $receivedMessage->getHeaders()->get(AmqpHeaders::MESSAGE_HEADER_NAME);
 
         $this->assertInstanceOf(AmqpHeaders::class, $amqpHeaders);
         $this->assertInstanceOf(AMQPChannel::class, $amqpHeaders->getChannel());
@@ -173,6 +174,72 @@ class AmqpQueueBuilderTest extends AmqpMessagingTest
         $this->assertEquals("123", $receivedMessage->getHeaders()->get("hash"));
     }
 
+    public function test_mapping_with_optional_headers()
+    {
+        $messageChannelName = Uuid::uuid4();
+        $exchangeName = Uuid::uuid4();
+        $routingKey = "black";
+
+        $amqpChannel = AmqpQueueBuilder::createWithDirectExchangeBinding(
+            $messageChannelName,
+            self::CONNECTION_REFERENCE,
+            $exchangeName,
+            $routingKey
+        )
+            ->withMessageConverterReferenceNames(["testConverter"]);
+
+        $amqpChannel = $this->buildAmqpQueueWithReferences($amqpChannel, [
+            "testConverter" => OptionalAmqpMessageHeaderConverter::createWith(
+                ["hash", "token"],
+                ["hash", "token"]
+            )
+        ]);
+
+        $amqpChannel->send(
+            MessageBuilder::withPayload("some")
+                ->setHeader("hash", "123")
+                ->setHeader(MessageHeaders::CONTENT_TYPE, "application/json")
+                ->build()
+        );
+
+        $receivedMessage = $amqpChannel->receive();
+
+        $this->assertEquals("123", $receivedMessage->getHeaders()->get("hash"));
+        $this->assertFalse($receivedMessage->getHeaders()->containsKey("token"));
+    }
+
+    public function test_mapping_with_objects_that_are_allowed_to_convert_to_string()
+    {
+        $messageChannelName = Uuid::uuid4();
+        $exchangeName = Uuid::uuid4();
+        $routingKey = "black";
+
+        $amqpChannel = AmqpQueueBuilder::createWithDirectExchangeBinding(
+            $messageChannelName,
+            self::CONNECTION_REFERENCE,
+            $exchangeName,
+            $routingKey
+        )
+            ->withMessageConverterReferenceNames(["testConverter"]);
+
+        $amqpChannel = $this->buildAmqpQueueWithReferences($amqpChannel, [
+            "testConverter" => OptionalAmqpMessageHeaderConverter::createWith(
+                ["personId"],
+                ["personId"]
+            )
+        ]);
+
+        $amqpChannel->send(
+            MessageBuilder::withPayload("some")
+                ->setHeader("personId", Uuid::fromString("b2b41101-f0f7-428c-aa55-59097ac6053e"))
+                ->build()
+        );
+
+        $receivedMessage = $amqpChannel->receive();
+
+        $this->assertEquals("b2b41101-f0f7-428c-aa55-59097ac6053e", $receivedMessage->getHeaders()->get("personId"));
+    }
+
     public function test_throwing_exception_if_mapped_header_not_found_during_receiving()
     {
         $exchangeName = Uuid::uuid4();
@@ -181,7 +248,7 @@ class AmqpQueueBuilderTest extends AmqpMessagingTest
         )->withMessageConverterReferenceNames(["testConverter"]);
 
         $amqpChannel = $this->buildAmqpQueueWithReferences($amqpQueueBuilder, [
-            "testConverter" => SimpleAmqpMessageHeaderConverter::createWith(
+            "testConverter" => RequiredAmqpMessageHeaderConverter::createWith(
                 [],
                 ["hash"]
             )
@@ -283,6 +350,32 @@ class AmqpQueueBuilderTest extends AmqpMessagingTest
             $exchangeName,
             ""
         )->withMessageAck(true));
+        $pollableChannel
+            ->send(MessageBuilder::withPayload($payload)->build());
+
+        $receivedMessage = $pollableChannel->receive();
+        /** @var AcknowledgementCallback $callback */
+        $callback = $receivedMessage->getHeaders()->get(AmqpHeaders::ACKNOWLEDGEMENT_CALLBACK);
+        $callback->accept();
+        /** @var AmqpHeaders $amqpHeaders */
+        $amqpHeaders = $receivedMessage->getHeaders()->get(AmqpHeaders::MESSAGE_HEADER_NAME);
+        $amqpHeaders->getChannel()->close();
+
+        $this->assertNull($this->buildDirectExchange($messageChannelName, $exchangeName, "")->receive());
+    }
+
+    public function test_acking_message_when_channel_do_not_require_it()
+    {
+        $messageChannelName = Uuid::uuid4();
+        $exchangeName = Uuid::uuid4();
+        $payload = "somePayload";
+
+        $pollableChannel = $this->buildAmqpQueue(AmqpQueueBuilder::createWithDirectExchangeBinding(
+            $messageChannelName,
+            self::CONNECTION_REFERENCE,
+            $exchangeName,
+            ""
+        )->withMessageAck(false));
         $pollableChannel
             ->send(MessageBuilder::withPayload($payload)->build());
 

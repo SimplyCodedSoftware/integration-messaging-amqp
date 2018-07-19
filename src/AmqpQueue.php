@@ -159,18 +159,12 @@ class AmqpQueue implements PollableChannel, MessageDrivenChannelAdapter
     {
         $this->declareQueueIfNotExists();
         $internalQueue = $this->internalQueue;
-        $messageConverter = $this->messageConverters;
-        $channel = $this->getChannel();
+        $self = $this;
 
         $this->getChannel()->basic_consume($this->queueName, '', false, !$this->withMessageAck, false, false,
-            function(AMQPMessage $amqpmMessage) use ($channel, $internalQueue, $messageConverter) {
-                $message = MessageBuilder::withPayload($amqpmMessage->getBody());
-
-                foreach ($this->messageConverters as $messageConverter) {
-                    $message = $messageConverter->fromAmqpMessage($amqpmMessage, $message);
-                }
-
-                $internalQueue->send($message->build());
+            function(AMQPMessage $amqpmMessage) use ($internalQueue, $self) {
+                $convertedMessage = $self->convertMessage($amqpmMessage);
+                $internalQueue->send($convertedMessage);
             }
         );
 
@@ -190,16 +184,13 @@ class AmqpQueue implements PollableChannel, MessageDrivenChannelAdapter
     {
         $this->declareQueueIfNotExists();
         $channel = $this->getChannel();
+        $self = $this;
 
         $this->getChannel()->basic_consume($this->queueName, '', false, !$this->withMessageAck, false, false,
-            function(AMQPMessage $amqpmMessage) use ($channel, $onMessageCallback) {
-                $message = MessageBuilder::withPayload($amqpmMessage->getBody());
-
-                foreach ($this->messageConverters as $messageConverter) {
-                    $message = $messageConverter->fromAmqpMessage($amqpmMessage, $message);
-                }
-
-                $onMessageCallback->handle($message->build());
+            function(AMQPMessage $amqpmMessage) use ($onMessageCallback, $self) {
+                $convertedMessage = $self->convertMessage($amqpmMessage);
+                $onMessageCallback->handle($convertedMessage);
+                $self->autoAck($convertedMessage);
             }
         );
 
@@ -245,7 +236,6 @@ class AmqpQueue implements PollableChannel, MessageDrivenChannelAdapter
         return $this->receiveTimeoutInMilliseconds / 1000;
     }
 
-
     /**
      * @param bool $registerQueueOnInitialization
      */
@@ -255,6 +245,7 @@ class AmqpQueue implements PollableChannel, MessageDrivenChannelAdapter
             $this->declareQueueIfNotExists();
         }
     }
+
 
     /**
      * @param AMQPChannel $channel
@@ -270,5 +261,38 @@ class AmqpQueue implements PollableChannel, MessageDrivenChannelAdapter
             $channel,
             $channel->getConnection()
         );
+    }
+
+    /**
+     * @param AMQPMessage $amqpmMessage
+     * @return Message
+     */
+    private function convertMessage(AMQPMessage $amqpmMessage) : Message
+    {
+        $message = MessageBuilder::withPayload($amqpmMessage->getBody())
+            ->setHeader(AmqpHeaders::ACKNOWLEDGEMENT_CALLBACK,
+                $this->withMessageAck
+                    ? new AmqpAcknowledgementCallback(AmqpHeaders::createFrom($amqpmMessage))
+                    : NoAcknowledgementCallback::create()
+            );
+
+        foreach ($this->messageConverters as $messageConverter) {
+            $message = $messageConverter->fromAmqpMessage($amqpmMessage, $message);
+        }
+
+        return $message->build();
+    }
+
+    /**
+     * @param Message $message
+     * @throws \SimplyCodedSoftware\IntegrationMessaging\MessagingException
+     */
+    private function autoAck(Message $message) : void
+    {
+        /** @var AcknowledgementCallback $acknowledgeCallback */
+        $acknowledgeCallback = $message->getHeaders()->get(AmqpHeaders::ACKNOWLEDGEMENT_CALLBACK);
+        if (!$acknowledgeCallback->isAlreadyAcknowledged() && $acknowledgeCallback->isAutoAck()) {
+            $acknowledgeCallback->accept();
+        }
     }
 }

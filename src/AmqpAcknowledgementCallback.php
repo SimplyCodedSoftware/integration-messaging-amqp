@@ -35,7 +35,7 @@ class AmqpAcknowledgementCallback implements AcknowledgementCallback
     /**
      * @inheritDoc
      */
-    public function isAcknowledged(): bool
+    public function isAlreadyAcknowledged(): bool
     {
         return $this->isAcked;
     }

@@ -9,6 +9,7 @@ $amqpConnection = \SimplyCodedSoftware\IntegrationMessaging\Amqp\AmqpConnectionF
     ->setHost("rabbitmq")
     ->setVirtualHost("/");
 
+/** @var \SimplyCodedSoftware\IntegrationMessaging\Amqp\AmqpQueue $amqpQueue */
 $amqpQueue = \SimplyCodedSoftware\IntegrationMessaging\Amqp\AmqpQueueBuilder::createWithDirectExchangeBinding("test", "amqp_connection_factory", "matching", "")
     ->withMessageAck(true)
     ->withQueueDurability(true)
@@ -26,8 +27,8 @@ $requestChannel->subscribe(new class implements \SimplyCodedSoftware\Integration
     public function handle(\SimplyCodedSoftware\IntegrationMessaging\Message $message): void
     {
         /** @var \SimplyCodedSoftware\IntegrationMessaging\Amqp\AmqpAcknowledgementCallback $ack */
-        $ack = $message->getHeaders()->get(\SimplyCodedSoftware\IntegrationMessaging\Amqp\AmqpHeaders::ACKNOWLEDGEMENT_CALLBACK);
-        $ack->accept();
+//        $ack = $message->getHeaders()->get(\SimplyCodedSoftware\IntegrationMessaging\Amqp\AmqpHeaders::ACKNOWLEDGEMENT_CALLBACK);
+//        $ack->accept();
 
         echo $message->getPayload() . "\n";
     }
@@ -45,5 +46,14 @@ $amqpInboundAdapter = \SimplyCodedSoftware\IntegrationMessaging\Amqp\AmqpInbound
     ]),
     \SimplyCodedSoftware\IntegrationMessaging\Handler\InMemoryReferenceSearchService::createEmpty()
 );
+
+//$receivedMessage = $amqpQueue->receive();
+//while(!$receivedMessage) {
+//    $receivedMessage = $amqpQueue->receive();
+//}
+///** @var \SimplyCodedSoftware\IntegrationMessaging\Amqp\AcknowledgementCallback $callback */
+//$callback = $receivedMessage->getHeaders()->get(\SimplyCodedSoftware\IntegrationMessaging\Amqp\AmqpHeaders::ACKNOWLEDGEMENT_CALLBACK);
+//$callback->reject();
+
 
 $amqpInboundAdapter->start();
