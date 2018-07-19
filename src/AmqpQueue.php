@@ -8,6 +8,7 @@ use PhpAmqpLib\Exception\AMQPTimeoutException;
 use PhpAmqpLib\Message\AMQPMessage;
 use SimplyCodedSoftware\IntegrationMessaging\Channel\QueueChannel;
 use SimplyCodedSoftware\IntegrationMessaging\Message;
+use SimplyCodedSoftware\IntegrationMessaging\MessageHandler;
 use SimplyCodedSoftware\IntegrationMessaging\MessageHeaders;
 use SimplyCodedSoftware\IntegrationMessaging\PollableChannel;
 use SimplyCodedSoftware\IntegrationMessaging\Support\Assert;
@@ -19,7 +20,7 @@ use SimplyCodedSoftware\IntegrationMessaging\Support\MessageBuilder;
  * @author Dariusz Gafka <dgafka.mail@gmail.com>
  * @internal
  */
-class AmqpQueue implements PollableChannel
+class AmqpQueue implements PollableChannel, MessageDrivenChannelAdapter
 {
     /**
      * @var string
@@ -183,12 +184,39 @@ class AmqpQueue implements PollableChannel
     }
 
     /**
+     * @param MessageHandler $onMessageCallback
+     */
+    public function startMessageDrivenConsumer(MessageHandler $onMessageCallback) : void
+    {
+        $this->declareQueueIfNotExists();
+        $channel = $this->getChannel();
+
+        $this->getChannel()->basic_consume($this->queueName, '', false, !$this->withMessageAck, false, false,
+            function(AMQPMessage $amqpmMessage) use ($channel, $onMessageCallback) {
+                $message = MessageBuilder::withPayload($amqpmMessage->getBody());
+
+                foreach ($this->messageConverters as $messageConverter) {
+                    $message = $messageConverter->fromAmqpMessage($amqpmMessage, $message);
+                }
+
+                $onMessageCallback->handle($message->build());
+            }
+        );
+
+        // Loop as long as the channel has callbacks registered
+        while (count($channel->callbacks)) {
+            $channel->wait();
+        }
+    }
+
+    /**
      * @return AMQPChannel
      */
     private function getChannel() : AMQPChannel
     {
         if (!isset($this->channel) || !$this->channel->getConnection() || !$this->channel->getConnection()->isConnected()) {
             $this->channel = $this->connectionFactory->createConnection()->channel();
+            $this->registerShutdownFunction($this->channel);
         }
 
 
@@ -209,7 +237,6 @@ class AmqpQueue implements PollableChannel
         }
     }
 
-
     /**
      * @return float
      */
@@ -217,6 +244,7 @@ class AmqpQueue implements PollableChannel
     {
         return $this->receiveTimeoutInMilliseconds / 1000;
     }
+
 
     /**
      * @param bool $registerQueueOnInitialization
@@ -226,5 +254,21 @@ class AmqpQueue implements PollableChannel
         if ($registerQueueOnInitialization) {
             $this->declareQueueIfNotExists();
         }
+    }
+
+    /**
+     * @param AMQPChannel $channel
+     */
+    private function registerShutdownFunction(AMQPChannel $channel) : void
+    {
+        register_shutdown_function(
+            function (AMQPChannel $channel, AbstractConnection $connection)
+            {
+                $channel->close();
+                $connection->close();
+            },
+            $channel,
+            $channel->getConnection()
+        );
     }
 }

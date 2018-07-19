@@ -10,6 +10,8 @@ use SimplyCodedSoftware\IntegrationMessaging\Endpoint\GenericPollableGateway;
 use SimplyCodedSoftware\IntegrationMessaging\Handler\ChannelResolver;
 use SimplyCodedSoftware\IntegrationMessaging\Handler\Gateway\GatewayProxyBuilder;
 use SimplyCodedSoftware\IntegrationMessaging\Handler\ReferenceSearchService;
+use SimplyCodedSoftware\IntegrationMessaging\MessageHandler;
+use SimplyCodedSoftware\IntegrationMessaging\Support\Assert;
 
 /**
  * Class AmqpInboundAdapterBuilder
@@ -90,15 +92,18 @@ class AmqpInboundAdapterBuilder implements ConsumerBuilder
      */
     public function build(ChannelResolver $channelResolver, ReferenceSearchService $referenceSearchService): ConsumerLifecycle
     {
-        /** @var GenericPollableGateway $gateway */
-        $gateway = GatewayProxyBuilder::create(Uuid::uuid4()->toString(), GenericPollableGateway::class, "runFlow", $this->outputChannel)
+        /** @var MessageHandler $gateway */
+        $gateway = GatewayProxyBuilder::create(Uuid::uuid4()->toString(), MessageHandler::class, "handle", $this->outputChannel)
                         ->withTransactionFactories($this->transactionFactoryReferenceNames)
                         ->withErrorChannel($this->errorChannelName)
                         ->build($referenceSearchService, $channelResolver);
 
-        return GenericPollableConsumer::createWith(
+        $messageDrivenChannelAdapter = $channelResolver->resolve($this->amqpChannelName);
+        Assert::isTrue($messageDrivenChannelAdapter instanceof MessageDrivenChannelAdapter, "Message Channel must be Message Driven Adapter");
+
+        return MessageDrivenConsumer::create(
             $this->endpointName,
-            $channelResolver->resolve($this->amqpChannelName),
+            $messageDrivenChannelAdapter,
             $gateway
         );
     }
