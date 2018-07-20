@@ -111,8 +111,8 @@ class AmqpInboundAdapterBuilder implements ConsumerBuilder
         if ($messageDrivenChannelAdapter instanceof MessageChannelAdapter) {
             $messageDrivenChannelAdapter = $messageDrivenChannelAdapter->getInternalMessageChannel();
         }
-        
-        Assert::isTrue($messageDrivenChannelAdapter instanceof MessageDrivenChannelAdapter, "Message Channel must be Message Driven Adapter");
+
+        Assert::isTrue($messageDrivenChannelAdapter instanceof MessageDrivenChannelAdapter, "Message Channel must be Message Driven Adapter {$this->amqpChannelName}");
 
         return MessageDrivenConsumer::create(
             $this->endpointName,
