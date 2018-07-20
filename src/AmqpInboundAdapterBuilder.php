@@ -3,6 +3,7 @@
 namespace SimplyCodedSoftware\IntegrationMessaging\Amqp;
 
 use Ramsey\Uuid\Uuid;
+use SimplyCodedSoftware\IntegrationMessaging\Channel\MessageChannelAdapter;
 use SimplyCodedSoftware\IntegrationMessaging\Endpoint\ConsumerBuilder;
 use SimplyCodedSoftware\IntegrationMessaging\Endpoint\ConsumerLifecycle;
 use SimplyCodedSoftware\IntegrationMessaging\Endpoint\GenericPollableConsumer;
@@ -107,6 +108,10 @@ class AmqpInboundAdapterBuilder implements ConsumerBuilder
                         ->build($referenceSearchService, $channelResolver);
 
         $messageDrivenChannelAdapter = $channelResolver->resolve($this->amqpChannelName);
+        if ($messageDrivenChannelAdapter instanceof MessageChannelAdapter) {
+            $messageDrivenChannelAdapter = $messageDrivenChannelAdapter->getInternalMessageChannel();
+        }
+        
         Assert::isTrue($messageDrivenChannelAdapter instanceof MessageDrivenChannelAdapter, "Message Channel must be Message Driven Adapter");
 
         return MessageDrivenConsumer::create(
