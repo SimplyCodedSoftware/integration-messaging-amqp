@@ -207,6 +207,7 @@ class AmqpQueue implements PollableChannel, MessageDrivenChannelAdapter
     {
         if (!isset($this->channel) || !$this->channel->getConnection() || !$this->channel->getConnection()->isConnected()) {
             $this->channel = $this->connectionFactory->createConnection()->channel();
+            $this->channel->basic_qos(null, 5, null);
             $this->registerShutdownFunction($this->channel);
         }
 
